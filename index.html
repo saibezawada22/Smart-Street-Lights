@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Street Lamp Animation with ThingSpeak Integration</title>
+<style>
+  #bg {
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    z-index: -1;
+    background-color: #87CEEB; /* Blue background */
+  }
+
+  .lamp {
+    position: fixed;
+    width: 150px;
+    bottom: 200px;
+  }
+
+  .short {
+    height: 350px;
+  }
+
+  #short {
+    left: calc(50% - 700px);
+  }
+
+  #short1 {
+    left: calc(50% - 500px);
+  }
+
+  #short2 {
+    left: calc(50% - 300px);
+  }
+  
+  #short3{
+    left: calc(50% - 100px);
+  }
+
+  #short4{
+    left: calc(50% - -100px);
+  }
+
+  #short5{
+    left: calc(50% - -300px);
+  }
+
+  #short6{
+    left: calc(50% - -500px);
+  }
+
+  #gap-block {
+    position: fixed;
+    bottom: 0;
+    height: 200px; /* Adjust the height of the block */
+    width: 100%;
+    background-color: #000; /* Black color */
+    z-index: 1; /* Ensure it's above the background */
+  }
+
+  #post, #curve, #socket {
+    position: absolute;
+  }
+
+  #post {
+    height: 100%;
+    width: 10px;
+    background: #070707;
+    left: 30px;
+    border-right: 5px solid #70643e;
+  }
+
+  #curve {
+    overflow: hidden;
+    width: 100%;
+    left: 0;
+    top: 20px;
+    height: 100px;
+    transform: rotate(-10deg);
+  }
+
+  #curve:before, #curve:after {
+    content: '';
+    position: absolute;
+    height: 100%;
+    width: 250px;
+    left: -50px;
+    border-radius: 50%;
+  }
+
+  #curve:before {
+    top: 0;
+    border-top: 10px solid #070707;
+  }
+
+  #curve:after {
+    top: 6px;
+    border-top: 5px solid #70643e;
+  }
+
+  #socket {
+    width: 15px;
+    height: 0;
+    border: solid transparent;
+    border-width: 20px 10px;
+    border-bottom-color: #070707;
+    top: 0;
+    right: 13px;
+  }
+
+  #socket:after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: -17px;
+    height: 50px;
+    width: 50px;
+    background: #fff39b; /* Yellow color */
+    color: #fff39b;
+    border-radius: 50%;
+    box-shadow: 0 0 10px;
+    z-index: -1;
+    animation: flicker 1s infinite; /* Added animation for flickering effect */
+  }
+
+  #socket.off:after {
+    background: #A9A9A9; /* Grey color */
+    animation: none; /* Remove flickering effect */
+  }
+
+  #tall #socket:after {
+    background: #ffd400;
+    color: #ffd400;
+    animation-delay: 1.5s;
+    animation-duration: 5s;
+  }
+
+  @keyframes flicker {
+    0%, 100% {
+      box-shadow: 0px 0px 25px #ffd400; /* Flicker with yellow color */
+    }
+    50% {
+      box-shadow: 0px 0px 0px; /* No shadow */
+    }
+  }
+</style>
+</head>
+<body>
+<div id='bg'></div>
+<div id='gap-block'></div>
+<div class='lamp short' id='short'>
+  <div id='post'></div>
+  <div id='curve'></div>
+  <div id='socket'></div>
+</div>
+<div class='lamp short' id='short1'>
+  <div id='post'></div>
+  <div id='curve'></div>
+  <div id='socket'></div>
+</div>
+<div class='lamp short' id='short2'>
+  <div id='post'></div>
+  <div id='curve'></div>
+  <div id='socket'></div>
+</div>
+<div class='lamp short' id='short3'>
+  <div id='post'></div>
+  <div id='curve'></div>
+  <div id='socket'></div>
+</div>
+<div class='lamp short' id='short4'>
+  <div id='post'></div>
+  <div id='curve'></div>
+  <div id='socket'></div>
+</div>
+<div class='lamp short' id='short5'>
+  <div id='post'></div>
+  <div id='curve'></div>
+  <div id='socket'></div>
+</div>
+<div class='lamp short' id='short6'>
+  <div id='post'></div>
+  <div id='curve'></div>
+  <div id='socket'></div>
+</div>
+
+<script>
+  const CHANNEL_ID = '2436935';
+  const API_KEY = 'WOMFTIRUEPG620Y9';
+
+  async function fetchData() {
+    const response = await fetch(`https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${API_KEY}&results=1`);
+    const data = await response.json();
+    return data;
+  }
+
+  async function updateBackground() {
+    const data = await fetchData();
+    if (data && data.feeds && data.feeds.length > 0) {
+      const value = parseInt(data.feeds[0].field1);
+      console.log(value); // Log the fetched value
+      if (value >= 1000) { // If value is 1000 or more, turn off the light
+        document.querySelectorAll('.lamp #socket').forEach(socket => {
+          socket.classList.add('off'); // Add 'off' class to the bulb
+        });
+      } else { // If value is less than 1000, turn on the light
+        document.querySelectorAll('.lamp #socket').forEach(socket => {
+          socket.classList.remove('off'); // Remove 'off' class from the bulb
+        });
+      }
+    }
+  }
+
+  async function updateBackgroundPeriodically() {
+    await updateBackground();
+    setInterval(updateBackground, 10000); // Update every 10 seconds
+  }
+
+  document.addEventListener('DOMContentLoaded', updateBackgroundPeriodically);
+</script>
+</body>
+</html>
